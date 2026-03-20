@@ -9,6 +9,7 @@ describe('CPU', () => {
     // テストごとにPCを初期化
     cpu.pc = 0x0100;
     // テストごとにサイクル数を初期化
+    cpu.cycles = 0;
   });
 
   it('NOP (0x00) で PC が 1 進むこと', () => {
@@ -18,7 +19,7 @@ describe('CPU', () => {
     expect(cpu.pc).toBe(0x0101);
   });
 
-  it('NOP(0x00) で cycles が 4 進むこと', () => {
+  it('NOP(0x00) は 4 サイクル消費すること', () => {
     cpu.memory[0x0100] = 0x00; // NOP
     cpu.step();
 
@@ -33,6 +34,19 @@ describe('CPU', () => {
     expect(cpu.b).toBe(0x55);
     expect(cpu.pc).toBe(0x0101);
     expect(cpu.cycles).toBe(4);
+  });
+
+  it('LD B, C (0x41) は 4 サイクル消費すること', () => {
+    cpu.memory[0x0100] = 0x41;
+    cpu.step();
+    expect(cpu.cycles).toBe(4);
+  });
+
+  it('LD B, (HL) (0x46) は 8 サイクル消費すること', () => {
+    cpu.memory[0x0100] = 0x46;
+    cpu.hl = 0xc000;
+    cpu.step();
+    expect(cpu.cycles).toBe(8);
   });
 
   it('CCF (0x3F) でキャリーフラグが反転すること', () => {

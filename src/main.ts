@@ -1,3 +1,13 @@
 import { CPU } from './cpu.ts';
 
-const myCPU = new CPU();
+/*
+const cpu = new CPU;
+const tsboy = (cpu) => {
+    while(){
+
+    }
+
+}
+
+tsboy(cpu)
+*/
