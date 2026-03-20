@@ -103,6 +103,7 @@ export class CPU {
     }
     switch (opcode) {
       case 0x00: // NOP
+        this.cycles += 4;
         break;
       case 0x3f: // CCF
         this.executeCCF();
