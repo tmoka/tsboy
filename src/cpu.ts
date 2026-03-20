@@ -145,6 +145,24 @@ export class CPU {
         break;
       case 0x3f: // CCF
         this.executeCCF();
+        break;
+
+      case 0xc6: {
+        // ADD A, n
+
+        const val = this.fetch();
+        const res = this.a + val;
+
+        // フラグ更新
+        this.zf = (res & 0xff) === 0; // 結果が 0 なら 1, それ以外なら 0
+        this.nf = false; // 加算なので N は必ず 0
+        this.hf = (this.a & 0xf) + (val & 0xf) > 0xf; // 4 ビット目 (0x0F) から溢れたら 1
+        this.cf = res > 0xff; // オーバーフローしたら 1
+
+        this.a = res & 0xff; // 最終的な結果を8ビットに収めて格納
+        this.cycles += 8;
+        break;
+      }
     }
   }
 

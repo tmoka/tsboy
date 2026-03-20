@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { CPU } from './cpu.ts';
+import { CPU } from '../../cpu.ts';
 
 describe('CPU', () => {
   let cpu: CPU;
@@ -34,6 +34,23 @@ describe('CPU', () => {
   it('c に set/get できること', () => {
     cpu.cf = true;
     expect(cpu.cf).toBe(true);
+    cpu.step();
+  });
+
+  it('フラグプロパティの操作で F レジスタのビットが正しく変わること', () => {
+    cpu.f = 0;
+
+    cpu.zf = true;
+    expect(cpu.f).toBe(0x80); // 1000 0000
+
+    cpu.cf = true;
+    expect(cpu.f).toBe(0x90); // 1001 0000 (Z と C が立っている)
+
+    cpu.zf = false;
+    expect(cpu.f).toBe(0x10); // 0001 0000
+
+    cpu.hf = true;
+    expect(cpu.f).toBe(0x30); // 0011 0000 (H と C が立っている)
     cpu.step();
   });
 
@@ -86,5 +103,10 @@ describe('CPU', () => {
     cpu.pc = 0x0100; // 同じ命令をもう一度
     cpu.step();
     expect(cpu.f & 0x10).toBe(0x00); // Cフラグが落ちているか
+  });
+
+  it('ADD (0xC6) で加算がされること', () => {
+    cpu.memory[0x0100] = 0xc6;
+    cpu.step();
   });
 });

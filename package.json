@@ -8,6 +8,7 @@
   "main": "index.js",
   "scripts": {
     "test": "vitest",
+    "test:log": "vitest run --reporter=verbose --no-color > test.log",
     "prepare": "husky install"
   },
   "lint-staged": {
