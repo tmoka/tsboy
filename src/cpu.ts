@@ -87,6 +87,7 @@ export class CPU {
   step() {
     const opcode = this.fetch();
     this.execute(opcode);
+    this.logState();
   }
 
   getCycles() {
@@ -130,5 +131,15 @@ export class CPU {
       this.f |= 0x10;
     }
     this.cycles += 4;
+  }
+
+  logState() {
+    console.log(
+      `PC: ${this.pc.toString(16).padStart(4, '0')} | ` +
+        `AF: ${((this.a << 8) | this.f).toString(16).padStart(4, '0')} | ` +
+        `BC: ${((this.b << 8) | this.c).toString(16).padStart(4, '0')} | ` +
+        `HL: ${this.hl.toString(16).padStart(4, '0')} | ` +
+        `CYC: ${this.cycles}`,
+    );
   }
 }
