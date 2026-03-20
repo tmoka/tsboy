@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { CPU } from './cpu.ts'; // ファイル名は適宜合わせてください
+import { CPU } from './cpu.ts';
 
 describe('CPU', () => {
   let cpu: CPU;
@@ -10,6 +10,31 @@ describe('CPU', () => {
     cpu.pc = 0x0100;
     // テストごとにサイクル数を初期化
     cpu.cycles = 0;
+  });
+
+  // フラグ管理関連
+  it('z に set/get できること', () => {
+    cpu.zf = true;
+    expect(cpu.zf).toBe(true);
+    cpu.step();
+  });
+
+  it('n に set/get できること', () => {
+    cpu.nf = true;
+    expect(cpu.nf).toBe(true);
+    cpu.step();
+  });
+
+  it('h に set/get できること', () => {
+    cpu.hf = true;
+    expect(cpu.hf).toBe(true);
+    cpu.step();
+  });
+
+  it('c に set/get できること', () => {
+    cpu.cf = true;
+    expect(cpu.cf).toBe(true);
+    cpu.step();
   });
 
   it('NOP (0x00) で PC が 1 進むこと', () => {

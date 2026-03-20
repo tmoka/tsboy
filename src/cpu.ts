@@ -14,6 +14,39 @@ export class CPU {
   // スタックポインタ
   sp: number = 0xfffe;
 
+  // 各フラグ (z, n, h, c) の getter/setter
+  get zf(): boolean {
+    return (this.f & 0x80) !== 0;
+  }
+  set zf(v: boolean) {
+    if (v) this.f |= 0x80;
+    else this.f &= ~0x80;
+  }
+
+  get nf(): boolean {
+    return (this.f & 0x40) !== 0;
+  }
+  set nf(v: boolean) {
+    if (v) this.f |= 0x40;
+    else this.f &= ~0x40;
+  }
+
+  get hf(): boolean {
+    return (this.f & 0x20) !== 0;
+  }
+  set hf(v: boolean) {
+    if (v) this.f |= 0x20;
+    else this.f &= ~0x20;
+  }
+
+  get cf(): boolean {
+    return (this.f & 0x10) !== 0;
+  }
+  set cf(v: boolean) {
+    if (v) this.f |= 0x10;
+    else this.f &= ~0x10;
+  }
+
   memory: Uint8Array = new Uint8Array(0x10000); // 64KB
 
   cycles: number = 0;
