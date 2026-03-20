@@ -89,6 +89,10 @@ export class CPU {
     this.execute(opcode);
   }
 
+  getCycles() {
+    return this.cycles;
+  }
+
   execute(opcode: number) {
     // 0x40 ~ 0x7F (ただし 0x76 HALT を除く) は LD r, r
     if (0x40 <= opcode && opcode <= 0x7f && opcode !== 0x76) {
@@ -98,7 +102,7 @@ export class CPU {
       const value = this.getRegisterByIndex(srcIdx);
       this.setRegisterByIndex(destIdx, value);
 
-      this.cycles += 4;
+      this.cycles += srcIdx === 6 || destIdx === 6 ? 8 : 4;
       return;
     }
     switch (opcode) {
