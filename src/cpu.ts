@@ -51,6 +51,24 @@ export class CPU {
 
   cycles: number = 0;
 
+  get bc(): number {
+    return (this.b << 8) | this.c;
+  }
+
+  set bc(value: number) {
+    this.b = (value >> 8) & 0xff;
+    this.c = value & 0xff;
+  }
+
+  get de(): number {
+    return (this.d << 8) | this.e;
+  }
+
+  set de(value: number) {
+    this.d = (value >> 8) & 0xff;
+    this.e = value & 0xff;
+  }
+
   get hl(): number {
     return (this.h << 8) | this.l;
   }
@@ -128,7 +146,9 @@ export class CPU {
   }
 
   execute(opcode: number) {
-    // 0x40 ~ 0x7F (ただし 0x76 HALT を除く) は LD r, r
+    // LD r, r
+    // レジスタ間の移動
+    // 0x40 ~ 0x7F (ただし 0x76 HALT を除く)
     if (0x40 <= opcode && opcode <= 0x7f && opcode !== 0x76) {
       const srcIdx = opcode & 0b111;
       const destIdx = (opcode >> 3) & 0b111;
@@ -139,6 +159,43 @@ export class CPU {
       this.cycles += srcIdx === 6 || destIdx === 6 ? 8 : 4;
       return;
     }
+
+    // LD [r16mem], A
+    // 16ビットレジスタが示すメモリ位置[r16mem] に レジスタAの値を書き込む
+    // 0x02, 0x12, 0x22, 0x32
+    if ((opcode & 0x0f) === 0x02) {
+      switch (opcode) {
+        case 0x02: // LD [BC], A
+          this.memory[this.bc] = this.a;
+          this.cycles += 8;
+          break;
+        case 0x12: // LD [DE], A
+          this.memory[this.de] = this.a;
+          this.cycles += 8;
+          break;
+        case 0x22: // LD [HL+], A
+          this.memory[this.hl] = this.a;
+          this.hl++; // HL = HL + 1
+          this.cycles += 8;
+          break;
+        case 0x32: // LD [HL-], A
+          this.memory[this.hl] = this.a;
+          this.hl--; // HL = HL - 1
+          this.cycles += 8;
+          break;
+      }
+    }
+
+    // LD r, n (即値ロード)
+    // 0x06, 0x0E, 0x16, 0x1E, 0x26, 0x2E, 0x36, 0x3E
+    if ((opcode & 0x0f) === 0x06) {
+      const destIdx = (opcode >> 3) & 0b111;
+      const value = this.fetch(); // 次のバイトを即値として取得
+      this.setRegisterByIndex(destIdx, value);
+      this.cycles += destIdx === 6 ? 12 : 8; // [HL]への書き込みは遅いので 12 サイクルかかる
+      return;
+    }
+
     switch (opcode) {
       case 0x00: // NOP
         this.cycles += 4;
