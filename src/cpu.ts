@@ -173,7 +173,7 @@ export class CPU {
     // LD [r16mem], A
     // 16ビットレジスタが示すメモリ位置[r16mem] に レジスタAの値を書き込む
     // 0x02, 0x12, 0x22, 0x32
-    if ((opcode & 0x0f) === 0x02) {
+    if (0x02 <= opcode && opcode <= 0x32 && (opcode & 0x0f) === 0x02) {
       switch (opcode) {
         case 0x02: // LD [BC], A
           this.memory[this.bc] = this.a;
@@ -199,7 +199,7 @@ export class CPU {
     // LD A, [r16mem]
     // 16ビットレジスタが示すメモリ位置[r16mem] の値を読み込み、レジスタAに書き込む
     // 0x0A, 0x1A, 0x2A, 0x3A
-    if ((opcode & 0x0f) === 0x0a) {
+    if (0x0a <= opcode && opcode <= 0x3a && (opcode & 0x0f) === 0x0a) {
       switch (opcode) {
         case 0x0a: // LD A, [BC]
           this.a = this.memory[this.bc];
@@ -224,7 +224,7 @@ export class CPU {
 
     // LD r, n (即値ロード)
     // 0x06, 0x0E, 0x16, 0x1E, 0x26, 0x2E, 0x36, 0x3E
-    if ((opcode & 0x0f) === 0x06) {
+    if (0x06 <= opcode && opcode <= 0x3e && (opcode & 0x0f) === 0x06) {
       const destIdx = (opcode >> 3) & 0b111;
       const value = this.fetch(); // 次のバイトを即値として取得
       this.setRegisterByIndex(destIdx, value);
@@ -247,7 +247,7 @@ export class CPU {
         const res = this.a + val;
 
         // フラグ更新
-        this.updateAddFlags(this.a, this.b, res);
+        this.updateAddFlags(this.a, val, res);
 
         this.a = res & 0xff; // 最終的な結果を8ビットに収めて格納
         this.cycles += 8;
