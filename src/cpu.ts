@@ -15,6 +15,7 @@ export class CPU {
   sp: number = 0xfffe;
 
   // 各フラグ (z, n, h, c) の getter/setter
+  // zfは結果が0であるかどうかを管理するフラグ
   get zf(): boolean {
     return (this.f & 0x80) !== 0;
   }
@@ -51,6 +52,7 @@ export class CPU {
 
   cycles: number = 0;
 
+  // 16ビットレジスタbc, de, hlのgetter/setter
   get bc(): number {
     return (this.b << 8) | this.c;
   }
@@ -175,12 +177,38 @@ export class CPU {
           break;
         case 0x22: // LD [HL+], A
           this.memory[this.hl] = this.a;
-          this.hl++; // HL = HL + 1
+          this.hl++; // LD [HL+], A では書き込みしたあとにHLをインクリメントする
           this.cycles += 8;
           break;
         case 0x32: // LD [HL-], A
           this.memory[this.hl] = this.a;
           this.hl--; // HL = HL - 1
+          this.cycles += 8;
+          break;
+      }
+    }
+
+    // LD A, [r16mem]
+    // 16ビットレジスタが示すメモリ位置[r16mem] の値を読み込み、レジスタAに書き込む
+    // 0x0A, 0x1A, 0x2A, 0x3A
+    if ((opcode & 0x0f) === 0x0a) {
+      switch (opcode) {
+        case 0x0a: // LD A, [BC]
+          this.a = this.memory[this.bc];
+          this.cycles += 8;
+          break;
+        case 0x1a: // LD A, [DE]
+          this.a = this.memory[this.de];
+          this.cycles += 8;
+          break;
+        case 0x2a: // LD A, [HL+]
+          this.a = this.memory[this.hl];
+          this.hl++;
+          this.cycles += 8;
+          break;
+        case 0x3a: // LD A, [HL-]
+          this.a = this.memory[this.hl];
+          this.hl--;
           this.cycles += 8;
           break;
       }
