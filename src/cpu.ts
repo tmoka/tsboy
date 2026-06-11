@@ -147,6 +147,14 @@ export class CPU {
     return this.cycles;
   }
 
+  // 算術演算用のフラグ計算ヘルパー関数
+  updateAddFlags(a: number, b: number, res: number) {
+    this.zf = (res & 0xff) === 0; // 結果が 0 なら 1, それ以外なら 0
+    this.nf = false; // 加算なので N は必ず 0
+    this.hf = (a & 0x0f) + (b & 0x0f) > 0x0f; // 4 ビット目 (0x0F) から溢れたら 1
+    this.cf = res > 0xff; // オーバーフローしたら 1
+  }
+
   execute(opcode: number) {
     // LD r, r
     // レジスタ間の移動
@@ -239,10 +247,7 @@ export class CPU {
         const res = this.a + val;
 
         // フラグ更新
-        this.zf = (res & 0xff) === 0; // 結果が 0 なら 1, それ以外なら 0
-        this.nf = false; // 加算なので N は必ず 0
-        this.hf = (this.a & 0xf) + (val & 0xf) > 0xf; // 4 ビット目 (0x0F) から溢れたら 1
-        this.cf = res > 0xff; // オーバーフローしたら 1
+        this.updateAddFlags(this.a, this.b, res);
 
         this.a = res & 0xff; // 最終的な結果を8ビットに収めて格納
         this.cycles += 8;
