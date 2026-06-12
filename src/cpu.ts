@@ -147,12 +147,28 @@ export class CPU {
     return this.cycles;
   }
 
-  // 算術演算用のフラグ計算ヘルパー関数
+  // 算術演算用のフラグ計算ヘルパーメソッド
   updateAddFlags(a: number, b: number, res: number) {
     this.zf = (res & 0xff) === 0; // 結果が 0 なら 1, それ以外なら 0
     this.nf = false; // 加算なので N は必ず 0
     this.hf = (a & 0x0f) + (b & 0x0f) > 0x0f; // 4 ビット目 (0x0F) から溢れたら 1
     this.cf = res > 0xff; // オーバーフローしたら 1
+  }
+
+  // ジャンプ命令の条件判定用のヘルパーメソッド
+  jumpCheckCondition(jumpConditionCode: number): boolean {
+    switch (jumpConditionCode) {
+      case 0:
+        return !this.zf; // NZ (Zeroフラグが0)
+      case 1:
+        return this.zf; // Z  (Zeroフラグが1)
+      case 2:
+        return !this.cf; // NC (Carryフラグが0)
+      case 3:
+        return this.cf; // C  (Carryフラグが1)
+      default:
+        return false;
+    }
   }
 
   execute(opcode: number) {
@@ -251,6 +267,42 @@ export class CPU {
 
         this.a = res & 0xff; // 最終的な結果を8ビットに収めて格納
         this.cycles += 8;
+        break;
+      }
+
+      case 0xc2:
+      case 0xca:
+      case 0xd2:
+      case 0xda: {
+        const condition = (opcode >> 3) & 0b11;
+        const low = this.fetch();
+        const high = this.fetch();
+        const address = (high << 8) | low;
+        const isConditionMet = this.jumpCheckCondition(condition);
+        if (isConditionMet) {
+          this.pc = address;
+          this.cycles += 16;
+        } else {
+          this.cycles += 12;
+        }
+        break;
+      }
+
+      // JP NN
+      case 0xc3: {
+        const low = this.fetch();
+        const high = this.fetch();
+        this.pc = (high << 8) | low;
+        this.cycles += 16;
+        break;
+      }
+
+      // JP HL
+      // HLレジスタが示すアドレスにジャンプする
+      // PCにHLレジスタが保持している値を代入してやればok
+      case 0xe9: {
+        this.pc = this.hl;
+        this.cycles += 4;
         break;
       }
     }
