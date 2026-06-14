@@ -283,7 +283,7 @@ export class CPU {
 
     // LD r, n (即値ロード)
     // 0x06, 0x0E, 0x16, 0x1E, 0x26, 0x2E, 0x36, 0x3E
-    if (0x06 <= opcode && opcode <= 0x3e && (opcode & 0x0f) === 0x06) {
+    if ((opcode & 0xc7) === 0x06) {
       const destIdx = (opcode >> 3) & 0b111;
       const value = this.fetch(); // 次のバイトを即値として取得
       this.setRegisterByIndex(destIdx, value);
