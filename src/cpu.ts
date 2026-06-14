@@ -14,6 +14,21 @@ export class CPU {
   // スタックポインタ
   sp: number = 0xfffe;
 
+  // スタックに16bitの値を追加
+  push(value: number) {
+    this.sp -= 2;
+    this.memory[this.sp] = value & 0xff; // 下位バイト
+    this.memory[this.sp + 1] = (value >> 8) & 0xff; // 上位バイト
+  }
+
+  // スタックから16bitの値を取得
+  pop(): number {
+    const low = this.memory[this.sp];
+    const high = this.memory[this.sp + 1];
+    this.sp += 2;
+    return (high << 8) | low;
+  }
+
   // 各フラグ (z, n, h, c) の getter/setter
   // zfは結果が0であるかどうかを管理するフラグ
   get zf(): boolean {
