@@ -739,6 +739,26 @@ export class CPU {
         break;
       }
 
+      // CALL cc, u16 (条件付きCALL)
+      // 0xC4 (NZ), 0xCC (Z), 0xD4 (NC), 0xDC (C)
+      case 0xc4:
+      case 0xcc:
+      case 0xd4:
+      case 0xdc: {
+        const condition = (opcode >> 3) & 0b11; // 0:NZ, 1:Z, 2:NC, 3:C
+        const address = this.getAddress();
+        const isConditionMet = this.jumpCheckCondition(condition);
+
+        if (isConditionMet) {
+          this.push(this.pc); // 条件を満たしたら現在のPCをスタックに退避
+          this.pc = address; // ジャンプ
+          this.cycles += 24; // 条件成立時は CALL と同じ 24 サイクル
+        } else {
+          this.cycles += 12; // 条件不成立時はアドレスを読んだだけで終わるので 12 サイクル
+        }
+        break;
+      }
+
       default:
         console.error(
           `未実装の命令です: 0x${opcode.toString(16).padStart(2, '0')} (PC: 0x${(this.pc - 1).toString(16).padStart(4, '0')})`,
