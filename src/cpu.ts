@@ -229,6 +229,31 @@ export class CPU {
       return;
     }
 
+    // LD r16mem, u16
+    // 0x01, 0x11, 0x21, 0x31
+    if (0x01 <= opcode && opcode <= 0x31 && (opcode & 0x0f) === 0x01) {
+      const value = this.getAddress();
+      switch (opcode) {
+        case 0x01: // LD BC, u16
+          this.bc = value;
+          this.cycles += 12;
+          break;
+        case 0x11: // LD DE, u16
+          this.de = value;
+          this.cycles += 12;
+          break;
+        case 0x21: // LD HL, u16
+          this.hl = value;
+          this.cycles += 12;
+          break;
+        case 0x31: // LD SP, u16
+          this.sp = value;
+          this.cycles += 12;
+          break;
+      }
+      return;
+    }
+
     // LD [r16mem], A
     // 16ビットレジスタが示すメモリ位置[r16mem] に レジスタAの値を書き込む
     // 0x02, 0x12, 0x22, 0x32
@@ -398,15 +423,6 @@ export class CPU {
       case 0xfb: {
         this.ime = true;
         this.cycles += 4;
-        break;
-      }
-
-      // LD SP, nn (16bit即値をSPにロード)
-      case 0x31: {
-        const low = this.fetch();
-        const high = this.fetch();
-        this.sp = (high << 8) | low;
-        this.cycles += 12; // メモリを2回読むので 4(opcode) + 4(low) + 4(high) = 12サイクル
         break;
       }
 
