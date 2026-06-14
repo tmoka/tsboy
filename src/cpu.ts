@@ -357,6 +357,43 @@ export class CPU {
       return;
     }
 
+    // XOR A, r8 (A レジスタと排他的論理和をとる)
+    // 0xA8 ~ 0xAF
+    if (0xa8 <= opcode && opcode <= 0xaf) {
+      const regIdx = opcode & 0b111; // 下位3ビットで対象レジスタを取得
+      const val = this.getRegisterByIndex(regIdx);
+
+      this.a ^= val; // A = A ^ val
+
+      // フラグの更新
+      this.zf = this.a === 0;
+      this.nf = false;
+      this.hf = false;
+      this.cf = false;
+
+      // [HL] (インデックス6) の時だけメモリアクセスがあるので8サイクル、他は4サイクル
+      this.cycles += regIdx === 6 ? 8 : 4;
+      return;
+    }
+
+    // OR A, r8 (A レジスタと論理和をとる)
+    // 0xB0 ~ 0xB7
+    if (0xb0 <= opcode && opcode <= 0xb7) {
+      const regIdx = opcode & 0b111;
+      const val = this.getRegisterByIndex(regIdx);
+
+      this.a |= val; // A = A | val
+
+      // フラグの更新 (XORと全く同じ！)
+      this.zf = this.a === 0;
+      this.nf = false;
+      this.hf = false;
+      this.cf = false;
+
+      this.cycles += regIdx === 6 ? 8 : 4;
+      return;
+    }
+
     // INC r8 (8bitレジスタのインクリメント)
     // 0x04, 0x0C, 0x14, 0x1C, 0x24, 0x2C, 0x34, 0x3C
     if ((opcode & 0xc7) === 0x04) {
