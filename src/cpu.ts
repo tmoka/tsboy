@@ -16,6 +16,9 @@ export class CPU {
   // スタックポインタ
   sp: number = 0xfffe;
 
+  // 割り込みマスターイネーブルフラグ
+  ime: boolean = false;
+
   // BUS
   bus: BUS;
 
@@ -354,6 +357,20 @@ export class CPU {
       case 0xc9: {
         this.pc = this.pop();
         this.cycles += 16;
+        break;
+      }
+
+      // DI (Disable Interrupts)
+      case 0xf3: {
+        this.ime = false;
+        this.cycles += 4;
+        break;
+      }
+
+      // EI (Enable Interrupts)
+      case 0xfb: {
+        this.ime = true;
+        this.cycles += 4;
         break;
       }
 
