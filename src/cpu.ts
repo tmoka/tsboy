@@ -583,6 +583,14 @@ export class CPU {
         break;
       }
 
+      // LD A, [u16] (16ビット即値アドレスの値をAに読み込む)
+      case 0xfa: {
+        const address = this.getAddress();
+        this.a = this.read(address);
+        this.cycles += 16;
+        break;
+      }
+
       // EI (Enable Interrupts)
       case 0xfb: {
         this.ime = true;
