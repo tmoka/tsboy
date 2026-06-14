@@ -338,6 +338,21 @@ export class CPU {
         break;
       }
 
+      // LD (FF00+u8), A (0xFF00 + n のアドレスに A を書き込む)
+      case 0xe0: {
+        const offset = this.fetch(); // 1バイト（オフセット）を読み込む
+        this.write(0xff00 + offset, this.a);
+        this.cycles += 12;
+        break;
+      }
+
+      // LD (FF00+C), A (0xFF00 + C のアドレスに A を書き込む)
+      case 0xe2: {
+        this.write(0xff00 + this.c, this.a);
+        this.cycles += 8;
+        break;
+      }
+
       // JP HL
       // HLレジスタが示すアドレスにジャンプする
       // PCにHLレジスタが保持している値を代入してやればok
