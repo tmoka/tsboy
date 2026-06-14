@@ -58,6 +58,13 @@ export class CPU {
     return (high << 8) | low;
   }
 
+  // 16bitアドレスを取得
+  getAddress(): number {
+    const low = this.fetch();
+    const high = this.fetch();
+    return (high << 8) | low;
+  }
+
   // 各フラグ (z, n, h, c) の getter/setter
   // zfは結果が0であるかどうかを管理するフラグ
   get zf(): boolean {
@@ -311,9 +318,7 @@ export class CPU {
       case 0xd2:
       case 0xda: {
         const condition = (opcode >> 3) & 0b11;
-        const low = this.fetch();
-        const high = this.fetch();
-        const address = (high << 8) | low;
+        const address = this.getAddress();
         const isConditionMet = this.jumpCheckCondition(condition);
         if (isConditionMet) {
           this.pc = address;
@@ -344,9 +349,7 @@ export class CPU {
 
       // CALL u16
       case 0xcd: {
-        const low = this.fetch();
-        const high = this.fetch();
-        const address = (high << 8) | low;
+        const address = this.getAddress();
         this.push(this.pc);
         this.pc = address;
         this.cycles += 24;
@@ -362,9 +365,7 @@ export class CPU {
 
       // LD [u16], A (Aの値を16ビット即値アドレスに書き込む)
       case 0xea: {
-        const low = this.fetch();
-        const high = this.fetch();
-        const address = (high << 8) | low;
+        const address = this.getAddress();
 
         this.write(address, this.a);
         this.cycles += 16;
