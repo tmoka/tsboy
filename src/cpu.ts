@@ -284,16 +284,6 @@ export class CPU {
       return;
     }
 
-    // LD (u16), A (Aの値を16ビット即値アドレスに書き込む)
-    if (opcode === 0xea) {
-      const low = this.fetch();
-      const high = this.fetch();
-      const address = (high << 8) | low;
-
-      this.write(address, this.a);
-      this.cycles += 16;
-    }
-
     switch (opcode) {
       case 0x00: // NOP
         this.cycles += 4;
@@ -366,6 +356,17 @@ export class CPU {
       // RET (0xC9)
       case 0xc9: {
         this.pc = this.pop();
+        this.cycles += 16;
+        break;
+      }
+
+      // LD [u16], A (Aの値を16ビット即値アドレスに書き込む)
+      case 0xea: {
+        const low = this.fetch();
+        const high = this.fetch();
+        const address = (high << 8) | low;
+
+        this.write(address, this.a);
         this.cycles += 16;
         break;
       }
