@@ -278,6 +278,7 @@ export class CPU {
           this.cycles += 8;
           break;
       }
+      return;
     }
 
     // LD A, [r16mem]
@@ -304,6 +305,7 @@ export class CPU {
           this.cycles += 8;
           break;
       }
+      return;
     }
 
     // LD r, n (即値ロード)
