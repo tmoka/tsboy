@@ -551,6 +551,21 @@ export class CPU {
         break;
       }
 
+      // LD A, (FF00+u8) (アドレスFF00+u8の値をレジスタAに書き込む)
+      case 0xf0: {
+        const offset = this.fetch(); // 1バイト（オフセット）を読み込む
+        this.a = this.read(0xff00 + offset);
+        this.cycles += 12;
+        break;
+      }
+
+      // LD A, (FF00+C) (アドレスFF00+Cの値をレジスタAに書き込む)
+      case 0xf2: {
+        this.a = this.read(0xff00 + this.c);
+        this.cycles += 8;
+        break;
+      }
+
       // DI (Disable Interrupts)
       case 0xf3: {
         this.ime = false;
