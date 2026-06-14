@@ -214,6 +214,26 @@ export class CPU {
     }
   }
 
+  // 8bit インクリメント用のヘルパーメソッド
+  inc8(value: number): number {
+    const result = (value + 1) & 0xff;
+    this.zf = result === 0;
+    this.nf = false;
+    this.hf = (value & 0x0f) === 0x0f; // 下位4ビットがすべて1ならハーフキャリー
+    // cf(キャリーフラグ) は変更しない！
+    return result;
+  }
+
+  // 8bit デクリメント用のヘルパーメソッド
+  dec8(value: number): number {
+    const result = (value - 1) & 0xff;
+    this.zf = result === 0;
+    this.nf = true; // 引き算なのでNフラグを立てる
+    this.hf = (value & 0x0f) === 0x00; // 下位4ビットが0からの引き算ならハーフボロー
+    // cf(キャリーフラグ) は変更しない！
+    return result;
+  }
+
   execute(opcode: number) {
     // LD r, r
     // レジスタ間の移動
@@ -315,6 +335,31 @@ export class CPU {
       const value = this.fetch(); // 次のバイトを即値として取得
       this.setRegisterByIndex(destIdx, value);
       this.cycles += destIdx === 6 ? 12 : 8; // [HL]への書き込みは遅いので 12 サイクルかかる
+      return;
+    }
+
+    // INC r8 (8bitレジスタのインクリメント)
+    // 0x04, 0x0C, 0x14, 0x1C, 0x24, 0x2C, 0x34, 0x3C
+    if ((opcode & 0xc7) === 0x04) {
+      const regIdx = (opcode >> 3) & 0b111;
+      const val = this.getRegisterByIndex(regIdx);
+      const res = this.inc8(val);
+      this.setRegisterByIndex(regIdx, res);
+
+      // レジスタ指定が6（[HL]）の場合はメモリアクセスが発生するので12サイクル、他は4サイクル
+      this.cycles += regIdx === 6 ? 12 : 4;
+      return;
+    }
+
+    // DEC r8 (8bitレジスタのデクリメント)
+    // 0x05, 0x0D, 0x15, 0x1D, 0x25, 0x2D, 0x35, 0x3D
+    if ((opcode & 0xc7) === 0x05) {
+      const regIdx = (opcode >> 3) & 0b111;
+      const val = this.getRegisterByIndex(regIdx);
+      const res = this.dec8(val);
+      this.setRegisterByIndex(regIdx, res);
+
+      this.cycles += regIdx === 6 ? 12 : 4;
       return;
     }
 
