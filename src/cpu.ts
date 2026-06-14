@@ -1,3 +1,5 @@
+import { BUS } from './bus.ts';
+
 export class CPU {
   a: number = 0;
   b: number = 0;
@@ -14,17 +16,41 @@ export class CPU {
   // スタックポインタ
   sp: number = 0xfffe;
 
+  // BUS
+  bus: BUS;
+
+  constructor(bus: BUS) {
+    this.bus = bus;
+  }
+
+  // サイクル数
+  cycles: number = 0;
+
+  // メモリ読み込み
+  read(address: number): number {
+    return this.bus.read8(address);
+  }
+
+  // メモリ書き込み
+  write(address: number, value: number) {
+    this.bus.write8(address, value & 0xff);
+  }
+
+  fetch(): number {
+    return this.read(this.pc++);
+  }
+
   // スタックに16bitの値を追加
   push(value: number) {
     this.sp -= 2;
-    this.memory[this.sp] = value & 0xff; // 下位バイト
-    this.memory[this.sp + 1] = (value >> 8) & 0xff; // 上位バイト
+    this.write(this.sp, value & 0xff); // 下位バイト
+    this.write(this.sp + 1, (value >> 8) & 0xff); // 上位バイト
   }
 
   // スタックから16bitの値を取得
   pop(): number {
-    const low = this.memory[this.sp];
-    const high = this.memory[this.sp + 1];
+    const low = this.read(this.sp);
+    const high = this.read(this.sp + 1);
     this.sp += 2;
     return (high << 8) | low;
   }
@@ -62,10 +88,6 @@ export class CPU {
     if (v) this.f |= 0x10;
     else this.f &= ~0x10;
   }
-
-  memory: Uint8Array = new Uint8Array(0x10000); // 64KB
-
-  cycles: number = 0;
 
   // 16ビットレジスタbc, de, hlのgetter/setter
   get bc(): number {
@@ -110,7 +132,7 @@ export class CPU {
       case 5:
         return this.l;
       case 6:
-        return this.memory[this.hl];
+        return this.read(this.hl);
       case 7:
         return this.a;
       default:
@@ -140,16 +162,12 @@ export class CPU {
         this.l = value;
         break;
       case 6:
-        this.memory[this.hl] = value;
+        this.write(this.hl, value);
         break;
       case 7:
         this.a = value;
         break;
     }
-  }
-
-  fetch(): number {
-    return this.memory[this.pc++];
   }
 
   step() {
@@ -207,20 +225,20 @@ export class CPU {
     if (0x02 <= opcode && opcode <= 0x32 && (opcode & 0x0f) === 0x02) {
       switch (opcode) {
         case 0x02: // LD [BC], A
-          this.memory[this.bc] = this.a;
+          this.write(this.bc, this.a);
           this.cycles += 8;
           break;
         case 0x12: // LD [DE], A
-          this.memory[this.de] = this.a;
+          this.write(this.de, this.a);
           this.cycles += 8;
           break;
         case 0x22: // LD [HL+], A
-          this.memory[this.hl] = this.a;
+          this.write(this.hl, this.a);
           this.hl++; // LD [HL+], A では書き込みしたあとにHLをインクリメントする
           this.cycles += 8;
           break;
         case 0x32: // LD [HL-], A
-          this.memory[this.hl] = this.a;
+          this.write(this.hl, this.a);
           this.hl--; // HL = HL - 1
           this.cycles += 8;
           break;
@@ -233,20 +251,20 @@ export class CPU {
     if (0x0a <= opcode && opcode <= 0x3a && (opcode & 0x0f) === 0x0a) {
       switch (opcode) {
         case 0x0a: // LD A, [BC]
-          this.a = this.memory[this.bc];
+          this.a = this.read(this.bc);
           this.cycles += 8;
           break;
         case 0x1a: // LD A, [DE]
-          this.a = this.memory[this.de];
+          this.a = this.read(this.de);
           this.cycles += 8;
           break;
         case 0x2a: // LD A, [HL+]
-          this.a = this.memory[this.hl];
+          this.a = this.read(this.hl);
           this.hl++;
           this.cycles += 8;
           break;
         case 0x3a: // LD A, [HL-]
-          this.a = this.memory[this.hl];
+          this.a = this.read(this.hl);
           this.hl--;
           this.cycles += 8;
           break;

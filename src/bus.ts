@@ -7,6 +7,13 @@ export class BUS {
   }
 
   write8(addr: number, value: number) {
-    this.memory[addr & 0xffff] = value;
+    const a = addr & 0xffff;
+
+    // テストROMの出力（シリアル通信）を傍受する
+    if (a === 0xff01) {
+      console.log(`[SERIAL]: ${String.fromCharCode(value)}`);
+    }
+
+    this.memory[a] = value;
   }
 }
