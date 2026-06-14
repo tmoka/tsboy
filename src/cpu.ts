@@ -331,6 +331,13 @@ export class CPU {
         this.cycles += 24;
         break;
       }
+
+      // RET (0xC9)
+      case 0xc9: {
+        this.pc = this.pop();
+        this.cycles += 16;
+        break;
+      }
     }
   }
 
