@@ -320,6 +320,17 @@ export class CPU {
         this.cycles += 4;
         break;
       }
+
+      // CALL u16
+      case 0xcd: {
+        const low = this.fetch();
+        const high = this.fetch();
+        const address = (high << 8) | low;
+        this.push(this.pc);
+        this.pc = address;
+        this.cycles += 24;
+        break;
+      }
     }
   }
 
