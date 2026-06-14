@@ -284,6 +284,16 @@ export class CPU {
       return;
     }
 
+    // LD (u16), A (Aの値を16ビット即値アドレスに書き込む)
+    if (opcode === 0xea) {
+      const low = this.fetch();
+      const high = this.fetch();
+      const address = (high << 8) | low;
+
+      this.write(address, this.a);
+      this.cycles += 16;
+    }
+
     switch (opcode) {
       case 0x00: // NOP
         this.cycles += 4;
@@ -371,6 +381,15 @@ export class CPU {
       case 0xfb: {
         this.ime = true;
         this.cycles += 4;
+        break;
+      }
+
+      // LD SP, nn (16bit即値をSPにロード)
+      case 0x31: {
+        const low = this.fetch();
+        const high = this.fetch();
+        this.sp = (high << 8) | low;
+        this.cycles += 12; // メモリを2回読むので 4(opcode) + 4(low) + 4(high) = 12サイクル
         break;
       }
 
