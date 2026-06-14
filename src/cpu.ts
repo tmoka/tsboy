@@ -244,6 +244,18 @@ export class CPU {
     this.cf = this.a < value; // 全体で桁借りが発生したか（Aよりvalueの方が大きいか）
   }
 
+  // 減算(sum)用のヘルパーメソッド
+  sub(value: number) {
+    const result = this.a - value;
+
+    this.zf = (result & 0xff) === 0;
+    this.nf = true; // 引き算なので必ず true
+    this.hf = (this.a & 0x0f) < (value & 0x0f); // 下位4ビットで桁借りが発生したか
+    this.cf = this.a < value; // 全体で桁借りが発生したか
+
+    this.a = result & 0xff;
+  }
+
   execute(opcode: number) {
     // LD r, r
     // レジスタ間の移動
@@ -444,6 +456,17 @@ export class CPU {
       this.setRegisterByIndex(regIdx, res);
 
       this.cycles += regIdx === 6 ? 12 : 4;
+      return;
+    }
+
+    // SUB A, r8
+    if (0x90 <= opcode && opcode <= 0x97) {
+      const regIdx = opcode & 0b111;
+      const val = this.getRegisterByIndex(regIdx);
+
+      this.sub(val);
+
+      this.cycles += regIdx === 6 ? 8 : 4;
       return;
     }
 
@@ -756,6 +779,14 @@ export class CPU {
         } else {
           this.cycles += 12; // 条件不成立時はアドレスを読んだだけで終わるので 12 サイクル
         }
+        break;
+      }
+
+      // SUB A, n (Aレジスタから8bit即値を引く)
+      case 0xd6: {
+        const value = this.fetch();
+        this.sub(value);
+        this.cycles += 8;
         break;
       }
 
