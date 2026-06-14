@@ -552,12 +552,41 @@ export class CPU {
         break;
       }
 
+      // AND A, n (Aレジスタと8ビット即値の論理積)
+      case 0xe6: {
+        const val = this.fetch(); // 1バイトの即値を読み込む
+        this.a &= val; // A = A & val
+
+        // フラグの更新 (ANDのルールに直従う)
+        this.zf = this.a === 0;
+        this.nf = false;
+        this.hf = true; // AND命令は必ずHフラグが立つ
+        this.cf = false;
+
+        this.cycles += 8; // オペコード(4) + 即値読み込み(4)
+        break;
+      }
+
       // LD [u16], A (Aの値を16ビット即値アドレスに書き込む)
       case 0xea: {
         const address = this.getAddress();
 
         this.write(address, this.a);
         this.cycles += 16;
+        break;
+      }
+
+      // XOR A, n (Aレジスタと8ビット即値の排他的論理和)
+      case 0xee: {
+        const val = this.fetch();
+        this.a ^= val;
+
+        this.zf = this.a === 0;
+        this.nf = false;
+        this.hf = false;
+        this.cf = false;
+
+        this.cycles += 8;
         break;
       }
 
@@ -580,6 +609,20 @@ export class CPU {
       case 0xf3: {
         this.ime = false;
         this.cycles += 4;
+        break;
+      }
+
+      // OR A, n (Aレジスタと8ビット即値の論理和)
+      case 0xf6: {
+        const val = this.fetch();
+        this.a |= val;
+
+        this.zf = this.a === 0;
+        this.nf = false;
+        this.hf = false;
+        this.cf = false;
+
+        this.cycles += 8;
         break;
       }
 
