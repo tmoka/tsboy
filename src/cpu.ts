@@ -234,6 +234,16 @@ export class CPU {
     return result;
   }
 
+  // 比較(CP)用のヘルパーメソッド
+  cp(value: number) {
+    const result = this.a - value;
+
+    this.zf = (result & 0xff) === 0;
+    this.nf = true; // 引き算なので必ず true
+    this.hf = (this.a & 0x0f) < (value & 0x0f); // 下位4ビットで桁借りが発生したか
+    this.cf = this.a < value; // 全体で桁借りが発生したか（Aよりvalueの方が大きいか）
+  }
+
   execute(opcode: number) {
     // LD r, r
     // レジスタ間の移動
@@ -667,6 +677,14 @@ export class CPU {
       case 0x3b: {
         this.sp = (this.sp - 1) & 0xffff;
         this.cycles += 8;
+        break;
+      }
+
+      // CP n (Aレジスタと8ビット即値の比較)
+      case 0xfe: {
+        const val = this.fetch(); // 1バイト読み込む
+        this.cp(val); // 比較してフラグを更新
+        this.cycles += 8; // オペコード(4) + 即値読み込み(4)
         break;
       }
 
