@@ -338,6 +338,25 @@ export class CPU {
       return;
     }
 
+    // AND A, r8 (A レジスタと論理積をとる)
+    // 0xA0 ~ 0xA7
+    if (0xa0 <= opcode && opcode <= 0xa7) {
+      const regIdx = opcode & 0b111; // 下位3ビットで対象レジスタを取得
+      const val = this.getRegisterByIndex(regIdx);
+
+      this.a &= val; // A = A & val
+
+      // フラグの更新
+      this.zf = this.a === 0;
+      this.nf = false;
+      this.hf = true; // AND命令は必ずHフラグが立つ
+      this.cf = false;
+
+      // [HL] (インデックス6) の時だけメモリアクセスがあるので8サイクル、他は4サイクル
+      this.cycles += regIdx === 6 ? 8 : 4;
+      return;
+    }
+
     // INC r8 (8bitレジスタのインクリメント)
     // 0x04, 0x0C, 0x14, 0x1C, 0x24, 0x2C, 0x34, 0x3C
     if ((opcode & 0xc7) === 0x04) {
