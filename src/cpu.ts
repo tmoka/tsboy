@@ -320,6 +320,24 @@ export class CPU {
       case 0x00: // NOP
         this.cycles += 4;
         break;
+
+      // JR e (無条件の相対ジャンプ)
+      case 0x18: {
+        let offset = this.fetch();
+
+        // 符号付き8ビット整数 (-128 〜 127) に変換する
+        // 127を超える値 (128~255) は負の数として扱う
+        if (offset > 127) {
+          offset -= 256;
+        }
+
+        // 現在の PC にオフセットを足す（引く）
+        this.pc += offset;
+
+        this.cycles += 12; // オペコード(4) + オフセット読み込み(4) + ジャンプ処理(4)
+        break;
+      }
+
       case 0x3f: // CCF
         this.executeCCF();
         break;
@@ -423,6 +441,28 @@ export class CPU {
       case 0xfb: {
         this.ime = true;
         this.cycles += 4;
+        break;
+      }
+
+      // PUSH 関連
+      case 0xe5: {
+        this.push(this.hl);
+        this.cycles += 16;
+        break;
+      }
+      case 0xc5: {
+        this.push(this.bc);
+        this.cycles += 16;
+        break;
+      }
+      case 0xd5: {
+        this.push(this.de);
+        this.cycles += 16;
+        break;
+      }
+      case 0xf5: {
+        this.push((this.a << 8) | this.f);
+        this.cycles += 16;
         break;
       }
 
