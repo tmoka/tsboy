@@ -356,6 +356,12 @@ export class CPU {
         this.cycles += 16;
         break;
       }
+
+      default:
+        console.error(
+          `未実装の命令です: 0x${opcode.toString(16).padStart(2, '0')} (PC: 0x${(this.pc - 1).toString(16).padStart(4, '0')})`,
+        );
+        throw new Error('Not Implemented Opcode');
     }
   }
 
