@@ -490,6 +490,50 @@ export class CPU {
         break;
       }
 
+      // INC r16 (16ビットインクリメント)
+      case 0x03: {
+        this.bc = (this.bc + 1) & 0xffff;
+        this.cycles += 8;
+        break;
+      }
+      case 0x13: {
+        this.de = (this.de + 1) & 0xffff;
+        this.cycles += 8;
+        break;
+      }
+      case 0x23: {
+        this.hl = (this.hl + 1) & 0xffff;
+        this.cycles += 8;
+        break;
+      }
+      case 0x33: {
+        this.sp = (this.sp + 1) & 0xffff;
+        this.cycles += 8;
+        break;
+      }
+
+      // DEC r16 (16ビットデクリメント)
+      case 0x0b: {
+        this.bc = (this.bc - 1) & 0xffff;
+        this.cycles += 8;
+        break;
+      }
+      case 0x1b: {
+        this.de = (this.de - 1) & 0xffff;
+        this.cycles += 8;
+        break;
+      }
+      case 0x2b: {
+        this.hl = (this.hl - 1) & 0xffff;
+        this.cycles += 8;
+        break;
+      }
+      case 0x3b: {
+        this.sp = (this.sp - 1) & 0xffff;
+        this.cycles += 8;
+        break;
+      }
+
       default:
         console.error(
           `未実装の命令です: 0x${opcode.toString(16).padStart(2, '0')} (PC: 0x${(this.pc - 1).toString(16).padStart(4, '0')})`,
