@@ -338,6 +338,24 @@ export class CPU {
       return;
     }
 
+    // JR cc, r8 (条件付き相対ジャンプ)
+    // 0x20, 0x28, 0x30, 0x38
+    if (0x20 <= opcode && opcode <= 0x38 && (opcode & 0x07) === 0x00) {
+      const condition = (opcode >> 3) & 0b11; // 0:NZ, 1:Z, 2:NC, 3:C
+      let offset = this.fetch();
+
+      const isConditionMet = this.jumpCheckCondition(condition);
+
+      if (isConditionMet) {
+        if (offset > 127) offset -= 256;
+        this.pc += offset;
+        this.cycles += 12;
+      } else {
+        this.cycles += 8;
+      }
+      return;
+    }
+
     // AND A, r8 (A レジスタと論理積をとる)
     // 0xA0 ~ 0xA7
     if (0xa0 <= opcode && opcode <= 0xa7) {
@@ -424,7 +442,7 @@ export class CPU {
         this.cycles += 4;
         break;
 
-      // JR e (無条件の相対ジャンプ)
+      // JR i8 (無条件の相対ジャンプ)
       case 0x18: {
         let offset = this.fetch();
 
