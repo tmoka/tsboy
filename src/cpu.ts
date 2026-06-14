@@ -256,6 +256,32 @@ export class CPU {
     this.a = result & 0xff;
   }
 
+  // ADC (キャリー付き加算) 用ヘルパーメソッド
+  adc(value: number) {
+    const carry = this.cf ? 1 : 0;
+    const result = this.a + value + carry;
+
+    this.zf = (result & 0xff) === 0;
+    this.nf = false; // 加算なので false
+    this.hf = (this.a & 0x0f) + (value & 0x0f) + carry > 0x0f;
+    this.cf = result > 0xff;
+
+    this.a = result & 0xff;
+  }
+
+  // SBC (キャリー付き減算) 用ヘルパーメソッド
+  sbc(value: number) {
+    const carry = this.cf ? 1 : 0;
+    const result = this.a - value - carry;
+
+    this.zf = (result & 0xff) === 0;
+    this.nf = true; // 減算なので true
+    this.hf = (this.a & 0x0f) - (value & 0x0f) - carry < 0;
+    this.cf = result < 0; // 全体でマイナスになったら桁借り発生
+
+    this.a = result & 0xff;
+  }
+
   execute(opcode: number) {
     // LD r, r
     // レジスタ間の移動
@@ -466,6 +492,22 @@ export class CPU {
 
       this.sub(val);
 
+      this.cycles += regIdx === 6 ? 8 : 4;
+      return;
+    }
+
+    // ADC A, r8
+    if (0x88 <= opcode && opcode <= 0x8f) {
+      const regIdx = opcode & 0b111;
+      this.adc(this.getRegisterByIndex(regIdx));
+      this.cycles += regIdx === 6 ? 8 : 4;
+      return;
+    }
+
+    // SBC A, r8
+    if (0x98 <= opcode && opcode <= 0x9f) {
+      const regIdx = opcode & 0b111;
+      this.sbc(this.getRegisterByIndex(regIdx));
       this.cycles += regIdx === 6 ? 8 : 4;
       return;
     }
@@ -786,6 +828,20 @@ export class CPU {
       case 0xd6: {
         const value = this.fetch();
         this.sub(value);
+        this.cycles += 8;
+        break;
+      }
+
+      // ADC A, n (即値のキャリー付き加算)
+      case 0xce: {
+        this.adc(this.fetch());
+        this.cycles += 8;
+        break;
+      }
+
+      // SBC A, n (即値のキャリー付き減算)
+      case 0xde: {
+        this.sbc(this.fetch());
         this.cycles += 8;
         break;
       }
