@@ -445,11 +445,6 @@ export class CPU {
       }
 
       // PUSH 関連
-      case 0xe5: {
-        this.push(this.hl);
-        this.cycles += 16;
-        break;
-      }
       case 0xc5: {
         this.push(this.bc);
         this.cycles += 16;
@@ -460,9 +455,38 @@ export class CPU {
         this.cycles += 16;
         break;
       }
+      case 0xe5: {
+        this.push(this.hl);
+        this.cycles += 16;
+        break;
+      }
       case 0xf5: {
         this.push((this.a << 8) | this.f);
         this.cycles += 16;
+        break;
+      }
+
+      // POP 関連
+      case 0xc1: {
+        this.bc = this.pop();
+        this.cycles += 12;
+        break;
+      }
+      case 0xd1: {
+        this.de = this.pop();
+        this.cycles += 12;
+        break;
+      }
+      case 0xe1: {
+        this.hl = this.pop();
+        this.cycles += 12;
+        break;
+      }
+      case 0xf1: {
+        const val = this.pop();
+        this.a = (val >> 8) & 0xff; // 上位8ビットを A へ
+        this.f = val & 0xf0; // 下位8ビットを F へ（ただし下位4ビットは必ず0にする）
+        this.cycles += 12;
         break;
       }
 
