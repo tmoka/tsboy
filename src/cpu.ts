@@ -858,6 +858,13 @@ export class CPU {
         break;
       }
 
+      // CBプレフィックス
+      case 0xcb: {
+        const cbOpcode = this.fetch();
+        this.executeCB(cbOpcode);
+        break;
+      }
+
       default:
         console.error(
           `未実装の命令です: 0x${opcode.toString(16).padStart(2, '0')} (PC: 0x${(this.pc - 1).toString(16).padStart(4, '0')})`,
@@ -882,6 +889,59 @@ export class CPU {
       this.f |= 0x10;
     }
     this.cycles += 4;
+  }
+
+  // CBプレフィックス専用の実行メソッド
+  executeCB(cbOpcode: number) {
+    const regIdx = cbOpcode & 0b111; // 下位3ビット: 対象レジスタ (0~7)
+    const bitIdx = (cbOpcode >> 3) & 0b111; // 中位3ビット: 対象ビット位置 (0~7)
+    const category = (cbOpcode >> 6) & 0b11; // 上位2ビット: 命令のカテゴリ (0~3)
+
+    // 対象のレジスタ（またはメモリ[HL]）から値を取得
+    const val = this.getRegisterByIndex(regIdx);
+
+    // カテゴリ1: BIT b, r (指定ビットのテスト)
+    // 指定されたビットが「0」ならZフラグを立てる
+    if (category === 1) {
+      const isZero = (val & (1 << bitIdx)) === 0;
+
+      this.zf = isZero;
+      this.nf = false;
+      this.hf = true;
+      // cf は変更しない
+
+      // サイクル数の加算: メモリ[HL](インデックス6)は12サイクル、レジスタは8サイクル
+      this.cycles += regIdx === 6 ? 12 : 8;
+      return;
+    }
+
+    // SRL (Shift Right Logical)
+    // 指定されたレジスタまたはメモリ上の8ビットデータを右へ1ビット論理シフトする
+    // 0x38 ~ 0x3F
+    if (0x38 <= cbOpcode && cbOpcode <= 0x3f) {
+      // 押し出される一番右のビットをキャリーフラグに保存
+      this.cf = (val & 0x01) === 1;
+
+      // 1bit 右にシフト
+      // JSだと >> は算術シフト(一番上の符号ビットを保持する)になってしまうので、論理シフトは>>>を使う
+      const result = val >>> 1;
+      this.setRegisterByIndex(regIdx, result);
+
+      // 残りのフラグ更新
+      this.zf = result === 0;
+      this.nf = false;
+      this.hf = false;
+
+      // メモリ[HL](インデックス6)は16サイクル、レジスタは8サイクル
+      this.cycles += regIdx === 6 ? 16 : 8;
+      return;
+    }
+
+    // まだ実装していないCB命令が来た場合のエラーハンドリング
+    console.error(
+      `未実装のCB命令です: 0xCB 0x${cbOpcode.toString(16).padStart(2, '0')} (PC: 0x${(this.pc - 2).toString(16).padStart(4, '0')})`,
+    );
+    throw new Error('Not Implemented CB Opcode');
   }
 
   logState() {
