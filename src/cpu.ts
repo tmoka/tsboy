@@ -915,6 +915,32 @@ export class CPU {
       return;
     }
 
+    // RR
+    // キャリーフラグを巻き込んで右へ1ビットローテート（回転）させる
+    // ①右に1bit論理シフト → ②古いキャリーフラグの値を最上位ビット(ビット7)に押し込む → ③溢れたビット(ビット0)の値を新しいキャリーフラグの値として更新
+    // RRC命令との違いに注意！
+    // 0x18 ~ 0x1F
+    if (0x18 <= cbOpcode && cbOpcode <= 0x1f) {
+      // まず「シフトする前の古いキャリーフラグ」を 1 か 0 で保存しておく
+      const oldCarry = this.cf ? 1 : 0;
+
+      // 押し出される一番右のビットをキャリーフラグに保存(ここでキャリーフラグが更新)
+      this.cf = (val & 0x01) === 1;
+      // 1bit 右にシフト
+      // JSだと >> は算術シフト(一番上の符号ビットを保持する)になってしまうので、論理シフトは>>>を使う
+      const result = (val >>> 1) | (oldCarry << 7);
+      this.setRegisterByIndex(regIdx, result);
+
+      // 残りのフラグ更新
+      this.zf = result === 0;
+      this.nf = false;
+      this.hf = false;
+
+      // メモリ[HL](インデックス6)は16サイクル、レジスタは8サイクル
+      this.cycles += regIdx === 6 ? 16 : 8;
+      return;
+    }
+
     // SRL (Shift Right Logical)
     // 指定されたレジスタまたはメモリ上の8ビットデータを右へ1ビット論理シフトする
     // 0x38 ~ 0x3F

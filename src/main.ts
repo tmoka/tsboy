@@ -15,8 +15,7 @@ cpu.sp = 0xfffe;
 
 const runEmulator = (cpu: CPU) => {
   try {
-    // 最初の1000ステップだけ回してテストする（無限ループ防止）
-    for (let i = 0; i < 1000; i++) {
+    for (let i = 0; i < 100000; i++) {
       cpu.step();
     }
     console.log('=== 実行終了 ===');
