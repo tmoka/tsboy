@@ -1042,6 +1042,25 @@ export class CPU {
       return;
     }
 
+    // SWAP
+    // 指定されたレジスタまたはメモリ上の8ビットデータの上位4ビットと下位4ビットを交換する
+    // 0x30 ~ 0x37
+    if (0x30 <= cbOpcode && cbOpcode <= 0x37) {
+      const low = val & 0x0f;
+      const high = val & 0xf0;
+      const result = (low << 4) | (high >>> 4);
+      this.setRegisterByIndex(regIdx, result);
+
+      this.zf = result === 0;
+      this.nf = false;
+      this.hf = false;
+      this.cf = false;
+
+      // メモリ[HL](インデックス6)は16サイクル、レジスタは8サイクル
+      this.cycles += regIdx === 6 ? 16 : 8;
+      return;
+    }
+
     // SRL (Shift Right Logical)
     // 指定されたレジスタまたはメモリ上の8ビットデータを右へ1ビット論理シフトする
     // 0x38 ~ 0x3F
