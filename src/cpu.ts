@@ -865,6 +865,29 @@ export class CPU {
         break;
       }
 
+      // RRA
+      // CB 0x1FをAレジスタのみに対して行う
+      // ゼロフラグが常に0(false)になることに注意！これがCB 0x1Fとの違い
+      case 0x1f: {
+        // シフト前キャリーフラグ退避
+        const oldCarry = this.cf ? 1 : 0;
+
+        // 押し出される一番右のビットをキャリーフラグに保存(ここでキャリーフラグが更新)
+        this.cf = (this.a & 0x01) === 1;
+        // 1bit 右にシフト
+        // JSだと >> は算術シフト(一番上の符号ビットを保持する)になってしまうので、論理シフトは>>>を使う
+        this.a = (this.a >>> 1) | (oldCarry << 7);
+
+        // 残りのフラグ更新
+        this.zf = false;
+        this.nf = false;
+        this.hf = false;
+
+        this.cycles += 4;
+
+        break;
+      }
+
       default:
         console.error(
           `未実装の命令です: 0x${opcode.toString(16).padStart(2, '0')} (PC: 0x${(this.pc - 1).toString(16).padStart(4, '0')})`,
