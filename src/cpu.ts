@@ -888,6 +888,24 @@ export class CPU {
         break;
       }
 
+      // RET cc
+      // 条件を満たした時だけ pop() して pc を更新する
+      case 0xc0:
+      case 0xc8:
+      case 0xd0:
+      case 0xd8: {
+        const condition = (opcode >> 3) & 0b11; // 0:NZ, 1:Z, 10:NC, 11:C
+        const isConditionMet = this.jumpCheckCondition(condition);
+
+        if (isConditionMet) {
+          this.pc = this.pop(); // スタックからアドレスを戻す
+          this.cycles += 20; // 条件成立時は20サイクル
+        } else {
+          this.cycles += 8; // 条件不成立時は8サイクル
+        }
+        break;
+      }
+
       default:
         console.error(
           `未実装の命令です: 0x${opcode.toString(16).padStart(2, '0')} (PC: 0x${(this.pc - 1).toString(16).padStart(4, '0')})`,
@@ -939,7 +957,9 @@ export class CPU {
     }
 
     // RL
-    // ①左に1bit論理シフト → ②古いキャリーフラグの値を最下位ビット(ビット0)に押し込む(JS/TSだとはみ出したビットを切り落とすために & 0xffするのに注意！) → ③ ①で左に溢れたビットの値を新しいキャリーフラグの値として更新
+    // ①左に1bit論理シフト
+    // → ②古いキャリーフラグの値を最下位ビット(ビット0)に押し込む(JS/TSだとはみ出したビットを切り落とすために & 0xffするのに注意！)
+    // → ③ ①で左に溢れたビットの値を新しいキャリーフラグの値として更新
     // 0x10 ~ 0x17
     if (0x10 <= cbOpcode && cbOpcode <= 0x17) {
       const oldCarry = this.cf ? 1 : 0;
@@ -963,7 +983,9 @@ export class CPU {
 
     // RR
     // キャリーフラグを巻き込んで右へ1ビットローテート（回転）させる
-    // ①右に1bit論理シフト → ②古いキャリーフラグの値を最上位ビット(ビット7)に押し込む → ③ ①で右に溢れたビットの値を新しいキャリーフラグの値として更新
+    // ①右に1bit論理シフト
+    // → ②古いキャリーフラグの値を最上位ビット(ビット7)に押し込む
+    // → ③ ①で右に溢れたビットの値を新しいキャリーフラグの値として更新
     // RRC命令との違いに注意！
     // 0x18 ~ 0x1F
     if (0x18 <= cbOpcode && cbOpcode <= 0x1f) {
