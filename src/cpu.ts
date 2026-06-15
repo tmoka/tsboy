@@ -282,6 +282,17 @@ export class CPU {
     this.a = result & 0xff;
   }
 
+  // ADD HL, r16 用ヘルパー
+  addHL(val: number) {
+    const res = (this.hl + val) & 0xffff;
+
+    this.nf = false;
+    this.hf = (this.hl & 0x07ff) + (val & 0x07ff) > 0x07ff;
+    this.cf = this.hl + val > 0xffff;
+
+    this.hl = res;
+  }
+
   execute(opcode: number) {
     // LD r, r
     // レジスタ間の移動
@@ -903,6 +914,28 @@ export class CPU {
         } else {
           this.cycles += 8; // 条件不成立時は8サイクル
         }
+        break;
+      }
+
+      // ADD HL, r16
+      case 0x09: {
+        this.addHL(this.bc);
+        this.cycles += 8;
+        break;
+      }
+      case 0x19: {
+        this.addHL(this.de);
+        this.cycles += 8;
+        break;
+      }
+      case 0x29: {
+        this.addHL(this.hl);
+        this.cycles += 8;
+        break;
+      }
+      case 0x39: {
+        this.addHL(this.sp);
+        this.cycles += 8;
         break;
       }
 
