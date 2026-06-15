@@ -939,6 +939,51 @@ export class CPU {
         break;
       }
 
+      // ADD SP, r8
+      // スタックポインター自身に符号付き8ビット値を足す
+      case 0xe8: {
+        const unsignedOffset = this.fetch();
+        let signedOffset = unsignedOffset;
+        if (signedOffset > 127) {
+          signedOffset -= 256;
+        }
+
+        // HとCフラグの計算 (0xF8と全く同じ)
+        this.hf = (this.sp & 0x0f) + (unsignedOffset & 0x0f) > 0x0f;
+        this.cf = (this.sp & 0xff) + unsignedOffset > 0xff;
+        this.zf = false;
+        this.nf = false;
+
+        // SP自身を更新 (16ビット)
+        this.sp = (this.sp + signedOffset) & 0xffff;
+
+        this.cycles += 16; // こっちは16サイクルかかる
+        break;
+      }
+
+      // LD HL, SP+r8
+      // スタックポインター（SP）に符号付き8ビット値を足した結果を、HLレジスタに格納する
+      case 0xf8: {
+        const unsignedOffset = this.fetch(); // まずは符号なし(0~255)として取得
+
+        // 符号付き8ビット整数 (-128 〜 127) に変換する
+        let signedOffset = unsignedOffset;
+        if (signedOffset > 127) {
+          signedOffset -= 256;
+        }
+
+        this.hl = (this.sp + signedOffset) & 0xffff;
+
+        this.zf = false;
+        this.nf = false;
+        this.hf = (this.sp & 0x0f) + (unsignedOffset & 0x0f) > 0x0f;
+        this.cf = this.sp + unsignedOffset > 0xff;
+
+        this.cycles += 12;
+
+        break;
+      }
+
       default:
         console.error(
           `未実装の命令です: 0x${opcode.toString(16).padStart(2, '0')} (PC: 0x${(this.pc - 1).toString(16).padStart(4, '0')})`,
