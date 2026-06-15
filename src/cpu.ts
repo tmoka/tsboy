@@ -485,12 +485,13 @@ export class CPU {
       return;
     }
 
-    // SUB A, r8
-    if (0x90 <= opcode && opcode <= 0x97) {
+    // ADD A, r8
+    if (0x80 <= opcode && opcode <= 0x87) {
       const regIdx = opcode & 0b111;
       const val = this.getRegisterByIndex(regIdx);
-
-      this.sub(val);
+      const res = this.a + val;
+      this.updateAddFlags(this.a, val, res);
+      this.a = res & 0xff;
 
       this.cycles += regIdx === 6 ? 8 : 4;
       return;
@@ -500,6 +501,17 @@ export class CPU {
     if (0x88 <= opcode && opcode <= 0x8f) {
       const regIdx = opcode & 0b111;
       this.adc(this.getRegisterByIndex(regIdx));
+      this.cycles += regIdx === 6 ? 8 : 4;
+      return;
+    }
+
+    // SUB A, r8
+    if (0x90 <= opcode && opcode <= 0x97) {
+      const regIdx = opcode & 0b111;
+      const val = this.getRegisterByIndex(regIdx);
+
+      this.sub(val);
+
       this.cycles += regIdx === 6 ? 8 : 4;
       return;
     }
