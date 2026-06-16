@@ -287,7 +287,7 @@ export class CPU {
     const res = (this.hl + val) & 0xffff;
 
     this.nf = false;
-    this.hf = (this.hl & 0x07ff) + (val & 0x07ff) > 0x07ff;
+    this.hf = (this.hl & 0x0fff) + (val & 0x0fff) > 0x0fff;
     this.cf = this.hl + val > 0xffff;
 
     this.hl = res;
@@ -466,6 +466,17 @@ export class CPU {
       this.nf = false;
       this.hf = false;
       this.cf = false;
+
+      this.cycles += regIdx === 6 ? 8 : 4;
+      return;
+    }
+
+    // CP A, r8
+    // 0xB8 ~ 0xBF
+    if (0xb8 <= opcode && opcode <= 0xbf) {
+      const regIdx = opcode & 0b111;
+      const val = this.getRegisterByIndex(regIdx);
+      this.cp(val);
 
       this.cycles += regIdx === 6 ? 8 : 4;
       return;
@@ -984,6 +995,78 @@ export class CPU {
         break;
       }
 
+      // DAA
+      case 0x27: {
+        let adjustment = 0;
+
+        // Hフラグが立っている、あるいは下位4ビットが9を超えている
+        if (this.hf || (!this.nf && (this.a & 0x0f) > 9)) {
+          adjustment |= 0x06;
+        }
+
+        // Cフラグが立っている、あるいは上位4ビットが9を超えている
+        if (this.cf || (!this.nf && this.a > 0x99)) {
+          adjustment |= 0x60;
+          this.cf = true;
+        }
+
+        // 減算か加算かで調整値を適用
+        if (this.nf) {
+          this.a = (this.a - adjustment) & 0xff;
+        } else {
+          this.a = (this.a + adjustment) & 0xff;
+        }
+
+        // フラグ更新
+        this.zf = this.a === 0;
+        this.hf = false; // Hフラグは強制的に 0 になる
+
+        this.cycles += 4;
+
+        break;
+      }
+
+      // LD SP, HL (HLの値をSPにコピー)
+      case 0xf9: {
+        this.sp = this.hl;
+        this.cycles += 8;
+        break;
+      }
+
+      // RLCA (Rotate A Left Circular)
+      // 注意: Zフラグは常に false にする！
+      case 0x07: {
+        const bitSeven = (this.a >> 7) & 0x01;
+        this.cf = bitSeven === 1; // 押し出されたビットはキャリーにも入る
+
+        // 左に1bitシフトし、空いた一番下(bit 0)に「ハミ出たbit 7」を戻す
+        this.a = ((this.a << 1) | bitSeven) & 0xff;
+
+        this.zf = false; // 強制的に false
+        this.nf = false;
+        this.hf = false;
+
+        this.cycles += 4;
+        break;
+      }
+
+      // STOP (0x10)
+      // 次の1バイトを読み飛ばして待機状態に入る
+      case 0x10: {
+        this.fetch(); // 次のバイトを読み飛ばす
+        this.cycles += 4;
+        break;
+      }
+
+      // LD (u16), SP
+      case 0x08: {
+        const address = this.getAddress(); // 16bitのアドレスを読み込む
+        this.write(address, this.sp & 0xff); // 下位バイト
+        this.write(address + 1, (this.sp >> 8) & 0xff); // 上位バイト
+        this.cycles += 20;
+        break;
+      }
+
       default:
         console.error(
           `未実装の命令です: 0x${opcode.toString(16).padStart(2, '0')} (PC: 0x${(this.pc - 1).toString(16).padStart(4, '0')})`,
@@ -1136,12 +1219,18 @@ export class CPU {
   }
 
   logState() {
+    const opcode = this.read(this.pc);
     console.log(
       `PC: ${this.pc.toString(16).padStart(4, '0')} | ` +
+        `Opcode: ${opcode.toString(16)} |` +
         `AF: ${((this.a << 8) | this.f).toString(16).padStart(4, '0')} | ` +
         `BC: ${((this.b << 8) | this.c).toString(16).padStart(4, '0')} | ` +
         `HL: ${this.hl.toString(16).padStart(4, '0')} | ` +
-        `CYC: ${this.cycles}`,
+        `CYC: ${this.cycles} | ` +
+        ` Memory: ${this.read(this.sp)}`,
     );
+    if (this.pc === 0xc003) {
+      console.log(`詳細デバッグ: A=${this.a}, CF=${this.cf}`);
+    }
   }
 }

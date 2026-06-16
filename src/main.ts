@@ -15,7 +15,7 @@ cpu.sp = 0xfffe;
 
 const runEmulator = (cpu: CPU) => {
   try {
-    for (let i = 0; i < 10000000; i++) {
+    while (true) {
       cpu.step();
     }
     console.log('=== 実行終了 ===');
